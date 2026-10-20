@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>D365 F&O Quality Engineering Dashboard</title>
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("scoutTheme");
+      const theme =
+        param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --cp-bg: #f7f4ef;
+      --cp-bg-elevated: #fcfbf8;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #f5f5f5;
+      --cp-border: #dedede;
+      --cp-border-strong: #919191;
+      --cp-text: #242424;
+      --cp-text-muted: #5c5c5c;
+      --cp-text-soft: #6f6f6f;
+      --cp-accent: #b11f4b;
+      --cp-accent-hover: #9a1a41;
+      --cp-accent-soft: rgba(177, 31, 75, 0.08);
+      --cp-accent-fg: #ffffff;
+      --cp-success: #16a34a;
+      --cp-danger: #dc2626;
+      --cp-warning: #f59e0b;
+      --cp-link: #0078d4;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+      --cp-overlay: rgba(255, 255, 255, 0.8);
+      --cp-panel: rgba(255, 255, 255, 0.86);
+      --cp-panel-strong: rgba(255, 255, 255, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.55);
+      --cp-highlight: rgba(177, 31, 75, 0.12);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --cp-bg: #3d3b3a;
+      --cp-bg-elevated: #343231;
+      --cp-surface: #292929;
+      --cp-surface-soft: #2e2e2e;
+      --cp-border: #474747;
+      --cp-border-strong: #5f5f5f;
+      --cp-text: #dedede;
+      --cp-text-muted: #919191;
+      --cp-text-soft: #b0b0b0;
+      --cp-accent: #fd8ea1;
+      --cp-accent-hover: #fb7b91;
+      --cp-accent-soft: rgba(253, 142, 161, 0.14);
+      --cp-accent-fg: #1a1a1a;
+      --cp-success: #4ade80;
+      --cp-danger: #f87171;
+      --cp-warning: #fbbf24;
+      --cp-link: #4da6ff;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+      --cp-overlay: rgba(41, 41, 41, 0.88);
+      --cp-panel: rgba(41, 41, 41, 0.72);
+      --cp-panel-strong: rgba(41, 41, 41, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.04);
+      --cp-highlight: rgba(253, 142, 161, 0.12);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--cp-bg);
+      color: var(--cp-text);
+      font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.45;
+    }
+    button { font: inherit; }
+    .shell { max-width: 1440px; margin: 0 auto; padding: 24px; }
+    .hero {
+      position: relative;
+      overflow: hidden;
+      background: var(--cp-bg-elevated);
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      padding: 36px 40px 32px;
+      box-shadow: 0 0 2px var(--cp-border), 0 1px 2px var(--cp-border);
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 360px;
+      height: 360px;
+      right: -150px;
+      top: -210px;
+      border: 80px solid var(--cp-accent-soft);
+      border-radius: 50%;
+    }
+    .lang-switch {
+      position: absolute; top: 20px; right: 22px; z-index: 2;
+      display: inline-flex; padding: 3px; gap: 2px;
+      border: 1px solid var(--cp-border); border-radius: 10px;
+      background: var(--cp-surface);
+    }
+    .lang-btn {
+      border: 0; border-radius: 7px; padding: 6px 10px;
+      background: transparent; color: var(--cp-text-muted); cursor: pointer;
+      font-size: 12px; font-weight: 700;
+    }
+    .lang-btn.active { background: var(--cp-accent); color: var(--cp-accent-fg); }
+    .eyebrow {
+      color: var(--cp-accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+    h1 { margin: 10px 0 8px; max-width: 900px; font-size: clamp(32px, 5vw, 58px); line-height: 1.06; letter-spacing: -.035em; }
+    h2 { margin: 0 0 16px; font-size: 26px; letter-spacing: -.02em; }
+    h3 { margin: 0 0 8px; font-size: 16px; }
+    p { margin: 0; }
+    .lede { max-width: 900px; color: var(--cp-text-muted); font-size: 17px; }
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+    .product-ribbon {
+      display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px;
+      position: relative; z-index: 1;
+    }
+    .product-chip {
+      display: inline-flex; align-items: center; gap: 10px;
+      min-height: 50px; padding: 8px 14px;
+      border: 1px solid var(--cp-border); border-radius: 12px;
+      background: var(--cp-surface);
+      box-shadow: 0 0 2px var(--cp-border), 0 1px 2px var(--cp-border);
+    }
+    .product-chip img { width: 72px; max-height: 34px; object-fit: contain; }
+    .product-chip svg { width: 32px; height: 32px; flex: 0 0 auto; }
+    .product-chip b { display: block; font-size: 12px; }
+    .product-chip small { display: block; color: var(--cp-text-muted); font-size: 10px; }
+    .icon-tile {
+      display: grid; place-items: center; width: 40px; height: 40px;
+      border-radius: 10px; background: var(--cp-accent-soft); color: var(--cp-accent);
+      font-family: Consolas, "Courier New", Courier, monospace; font-weight: 900;
+    }
+    .pill, .status {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: 1px solid var(--cp-border);
+      border-radius: 999px; padding: 6px 10px;
+      background: var(--cp-surface); color: var(--cp-text-muted); font-size: 12px;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cp-accent); }
+    .tabs {
+      position: sticky; top: 0; z-index: 5;
+      display: flex; gap: 4px; padding: 14px 0 12px;
+      background: var(--cp-bg);
+      overflow-x: auto;
+    }
+    .tab {
+      border: 1px solid var(--cp-border); border-radius: 0.625rem;
+      padding: 9px 14px; background: var(--cp-surface); color: var(--cp-text-muted);
+      cursor: pointer; white-space: nowrap;
+    }
+    .tab:hover { border-color: var(--cp-border-strong); color: var(--cp-text); }
+    .tab.active { background: var(--cp-accent); border-color: var(--cp-accent); color: var(--cp-accent-fg); font-weight: 700; }
+    .panel { display: none; animation: appear .18s ease-out; }
+    .panel.active { display: block; }
+    @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
+    .grid { display: grid; gap: 16px; }
+    .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 8px 0 24px; }
+    .cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card {
+      background: var(--cp-surface);
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 0 2px var(--cp-border), 0 1px 2px var(--cp-border);
+    }
+    .kpi { min-height: 150px; }
+    .kpi .value { margin: 12px 0 6px; font-family: Calibri, "Segoe UI", sans-serif; font-size: 38px; font-weight: 800; letter-spacing: -.03em; color: var(--cp-accent); }
+    .kpi .label { font-weight: 700; }
+    .note { color: var(--cp-text-muted); font-size: 12px; }
+    .section { margin: 0 0 24px; }
+    .section-head { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin: 26px 2px 12px; }
+    .section-head p { color: var(--cp-text-muted); font-size: 13px; }
+    .value-list { display: grid; gap: 12px; }
+    .value-row { display: grid; grid-template-columns: 44px 1fr; gap: 12px; }
+    .number {
+      display: grid; place-items: center; width: 36px; height: 36px;
+      background: var(--cp-accent-soft); color: var(--cp-accent);
+      border-radius: 10px; font-weight: 800;
+    }
+    .bar-row { display: grid; grid-template-columns: 180px 1fr 66px; align-items: center; gap: 12px; margin: 12px 0; font-size: 13px; }
+    .track { height: 10px; border-radius: 999px; background: var(--cp-surface-soft); overflow: hidden; }
+    .fill { height: 100%; border-radius: inherit; background: var(--cp-accent); }
+    .fill.success { background: var(--cp-success); }
+    .fill.warning { background: var(--cp-warning); }
+    .fill.danger { background: var(--cp-danger); }
+    .mono { font-family: Consolas, "Courier New", Courier, monospace; }
+    .timeline { position: relative; padding-left: 28px; }
+    .timeline::before { content: ""; position: absolute; left: 8px; top: 7px; bottom: 7px; width: 2px; background: var(--cp-border); }
+    .event { position: relative; padding: 0 0 22px; }
+    .event::before { content: ""; position: absolute; left: -25px; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: var(--cp-accent); border: 3px solid var(--cp-bg); }
+    .event time { color: var(--cp-accent); font-size: 12px; font-weight: 700; }
+    .event p { color: var(--cp-text-muted); margin-top: 4px; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--cp-border); border-radius: 12px; }
+    table { width: 100%; border-collapse: collapse; min-width: 760px; background: var(--cp-surface); }
+    th, td { padding: 11px 13px; border-bottom: 1px solid var(--cp-border); text-align: left; vertical-align: top; font-size: 13px; }
+    th { background: var(--cp-surface-soft); color: var(--cp-text-muted); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+    tr:last-child td { border-bottom: 0; }
+    .status { padding: 3px 8px; font-weight: 700; border: 0; }
+    .pass { color: var(--cp-success); background: var(--cp-surface-soft); }
+    .partial { color: var(--cp-warning); background: var(--cp-surface-soft); }
+    .blocked { color: var(--cp-danger); background: var(--cp-surface-soft); }
+    .info { color: var(--cp-link); background: var(--cp-surface-soft); }
+    .callout { border-left: 4px solid var(--cp-accent); padding: 16px 18px; background: var(--cp-accent-soft); border-radius: 0 12px 12px 0; }
+    .architecture { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; align-items: stretch; }
+    .stage { position: relative; padding: 18px 14px; background: var(--cp-surface); border: 1px solid var(--cp-border); border-radius: 12px; }
+    .stage-icon {
+      display: grid; place-items: center; width: 36px; height: 36px; margin-bottom: 12px;
+      border-radius: 10px; background: var(--cp-accent-soft); color: var(--cp-accent);
+      font-size: 18px; font-weight: 900;
+    }
+    .stage:not(:last-child)::after { content: "→"; position: absolute; right: -13px; top: 36%; z-index: 1; color: var(--cp-accent); font-weight: 900; }
+    .stage b { display: block; margin-bottom: 6px; }
+    .stage span { color: var(--cp-text-muted); font-size: 12px; }
+    .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .filter {
+      border: 1px solid var(--cp-border); border-radius: 999px; padding: 6px 10px;
+      color: var(--cp-text-muted); background: var(--cp-surface); cursor: pointer; font-size: 12px;
+    }
+    .filter.active { color: var(--cp-accent-fg); background: var(--cp-accent); border-color: var(--cp-accent); }
+    .visual-summary { display: grid; grid-template-columns: 210px 1fr; gap: 20px; align-items: center; }
+    .donut {
+      position: relative; display: grid; place-items: center; width: 180px; height: 180px;
+      margin: auto; border-radius: 50%;
+      background: conic-gradient(var(--cp-success) 0 26%, var(--cp-warning) 26% 35%, var(--cp-danger) 35% 98%, var(--cp-border) 98% 100%);
+    }
+    .donut::after { content: ""; position: absolute; width: 116px; height: 116px; border-radius: 50%; background: var(--cp-surface); }
+    .donut strong { position: relative; z-index: 1; font-size: 28px; }
+    .donut span { position: absolute; z-index: 1; margin-top: 42px; font-size: 11px; color: var(--cp-text-muted); }
+    .tool-heading { display: flex; align-items: center; gap: 12px; }
+    .tool-heading .tool-logo { width: 78px; max-height: 42px; object-fit: contain; }
+    footer { padding: 24px 4px 8px; color: var(--cp-text-muted); font-size: 12px; text-align: center; }
+    @media (max-width: 980px) {
+      .kpis, .cols-3 { grid-template-columns: repeat(2, 1fr); }
+      .cols-2 { grid-template-columns: 1fr; }
+      .architecture { grid-template-columns: 1fr; }
+      .visual-summary { grid-template-columns: 1fr; }
+      .stage:not(:last-child)::after { content: "↓"; right: auto; left: 50%; top: auto; bottom: -19px; }
+    }
+    @media (max-width: 620px) {
+      .shell { padding: 12px; }
+      .hero { padding: 28px 22px; }
+      .kpis, .cols-3 { grid-template-columns: 1fr; }
+      .bar-row { grid-template-columns: 130px 1fr 54px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div class="lang-switch" aria-label="Language">
+        <button class="lang-btn active" data-lang="zh">中文</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+      <div class="eyebrow">D365 F&O · Quality Engineering</div>
+      <h1>从业务流程验证，到并发压测，再到代码级根因</h1>
+      <p class="lede">近期工作形成了一条完整的质量工程闭环：用可见 UI 执行端到端 UAT，以 JMeter 复现真实业务并发，再通过 Trace Parser 将性能现象下钻到 X++ 调用链与 SQL 访问模式。</p>
+      <div class="meta">
+        <span class="pill"><span class="dot"></span> GCP2 UAT</span>
+        <span class="pill">2026-10-15 — 2026-10-18</span>
+        <span class="pill">D365 F&O · JMeter 5.6.3 · Trace Parser 7.0.8199.55</span>
+      </div>
+      <div class="product-ribbon" aria-label="Tools used">
+        <div class="product-chip">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 7h9l4 4v14H5zM14 7v5h5M9 17h6M9 21h6" fill="none" stroke="var(--cp-accent)" stroke-width="2"/><path d="M22 8l5 5-5 5-5-5z" fill="var(--cp-accent-soft)" stroke="var(--cp-accent)" stroke-width="1.5"/></svg>
+          <span><b>D365 F&amp;O</b><small>Business process</small></span>
+        </div>
+        <div class="product-chip">
+          <span class="icon-tile">S</span>
+          <span><b>Microsoft Scout</b><small>Automation &amp; evidence</small></span>
+        </div>
+        <div class="product-chip">
+          <img src="Apache-JMeter-logo-transparent.png" alt="Apache JMeter">
+          <span><b>Apache JMeter</b><small>Concurrent load</small></span>
+        </div>
+        <div class="product-chip">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M3 18h4l3-9 5 16 4-12 3 5h7" fill="none" stroke="var(--cp-accent)" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="16" r="13" fill="none" stroke="var(--cp-border-strong)" stroke-width="1.2"/></svg>
+          <span><b>Trace Parser</b><small>X++ &amp; SQL diagnosis</small></span>
+        </div>
+      </div>
+    </header>
+
+    <nav class="tabs" aria-label="Dashboard sections">
+      <button class="tab active" data-tab="overview">Overview</button>
+      <button class="tab" data-tab="value">Business Value</button>
+      <button class="tab" data-tab="uat">UAT Details</button>
+      <button class="tab" data-tab="performance">JMeter Details</button>
+      <button class="tab" data-tab="trace">Trace Details</button>
+      <button class="tab" data-tab="artifacts">Deliverables</button>
+    </nav>
+
+    <section id="overview" class="panel active">
+      <div class="grid kpis">
+        <article class="card kpi"><div class="eyebrow">Functional scope</div><div class="value">65</div><div class="label">UAT test cases</div><div class="note">P2P, OTC, Manufacturing, Inventory, RTR</div></article>
+        <article class="card kpi"><div class="eyebrow">Performance proof</div><div class="value">10 / 0</div><div class="label">Concurrent users / errors</div><div class="note">Create → Estimate → Operations schedule</div></article>
+        <article class="card kpi"><div class="eyebrow">Diagnostic depth</div><div class="value">3.84M</div><div class="label">Decoded trace events</div><div class="note">1.81M X++ calls · 14,632 SQL events</div></article>
+        <article class="card kpi"><div class="eyebrow">Evidence</div><div class="value">59+</div><div class="label">UAT screenshots</div><div class="note">Plus JMeter dashboards, ETL, Word/PDF/PPT reports</div></article>
+      </div>
+
+      <div class="section-head"><div><h2>What I did</h2><p>一条由业务结果驱动、可审计、可重复的验证链路</p></div></div>
+      <div class="architecture">
+        <article class="stage"><div class="stage-icon">▶</div><b>1 · Execute</b><span>在 D365 可见 UI 中执行真实采购、生产、库存、销售与财务流程。</span></article>
+        <article class="stage"><div class="stage-icon">◉</div><b>2 · Prove</b><span>捕获对象编号、状态、批次、凭证、错误消息与截图证据。</span></article>
+        <article class="stage"><div class="stage-icon">10×</div><b>3 · Load</b><span>把业务动作转成 JMeter 并发场景，验证 10 个独立会话。</span></article>
+        <article class="stage"><div class="stage-icon">⌁</div><b>4 · Diagnose</b><span>导入 ETL，解码 X++ 方法、调用时间、SQL 与活动关联。</span></article>
+        <article class="stage"><div class="stage-icon">✓</div><b>5 · Recommend</b><span>把现象转成缺陷分类、优化优先级与可复测目标。</span></article>
+      </div>
+
+      <div class="grid cols-2 section" style="margin-top:16px">
+        <article class="card">
+          <h3>Overall outcome</h3>
+          <div class="callout"><b>从“测试是否通过”升级到“为什么慢、哪里错、如何验证修复”。</b><br><span class="note">UAT 给出业务真实性；JMeter 给出并发基线；Trace Parser 给出工程根因。</span></div>
+        </article>
+        <article class="card">
+          <h3>Key findings</h3>
+          <div class="value-list">
+            <div class="value-row"><span class="number">1</span><div><b>UAT：Partial Pass</b><p class="note">核心实物流和销售开票跑通；生产 End、采购发票、计划单 Firm 暴露真实缺陷。</p></div></div>
+            <div class="value-row"><span class="number">2</span><div><b>Load：10 users, 0 errors</b><p class="note">平均 19.37 秒，P90 25.41 秒，所有 10 张生产订单最终 Scheduled。</p></div></div>
+            <div class="value-row"><span class="number">3</span><div><b>Trace：调用放大而非单条慢 SQL</b><p class="note">成本估算约 52.2 秒，9,025 次数据库调用；核心是 BOM 递归与逐行访问。</p></div></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="value" class="panel">
+      <div class="section-head"><div><h2>Business value</h2><p>把一次性的手工验证，转化成可复用的交付能力</p></div></div>
+      <div class="grid cols-3">
+        <article class="card"><div class="eyebrow">Risk reduction</div><h3>更早发现业务与配置缺口</h3><p>在投产前识别计划单 Firm 空对象、生产过账维度、采购发票舍入科目、工作流和物料主数据问题，避免故障进入生产。</p></article>
+        <article class="card"><div class="eyebrow">Decision quality</div><h3>事实驱动的 Go / No-Go</h3><p>每个结论都有对象编号、状态、错误原文与证据支撑，避免把“未测”“被阻塞”误报成通过或失败。</p></article>
+        <article class="card"><div class="eyebrow">Engineering focus</div><h3>把优化资源投向真正瓶颈</h3><p>Trace 证明主要问题是 9,025 次数据库调用和 BOM 递归，而不是某一条 SQL；减少无效索引调优与猜测。</p></article>
+        <article class="card"><div class="eyebrow">Repeatability</div><h3>建立可复测的性能基线</h3><p>10 用户、10 秒 ramp-up、唯一生产订单、状态关联与最终业务校验，使修复前后能够使用同一场景比较。</p></article>
+        <article class="card"><div class="eyebrow">Auditability</div><h3>完整证据链与交付物</h3><p>UI 截图、Excel 执行记录、Word/PDF 报告、JMeter JTL/HTML、ETL、PPT 和分析 JSON 可追溯到每个结论。</p></article>
+        <article class="card"><div class="eyebrow">Acceleration</div><h3>跨职能协同更快</h3><p>业务、测试、开发与 CSS 团队使用同一套事实：业务步骤、响应时间、X++ 方法、SQL 调用和整改优先级。</p></article>
+      </div>
+      <div class="section-head"><div><h2>Value chain</h2></div></div>
+      <div class="grid cols-2">
+        <article class="card">
+          <h3>传统方式</h3>
+          <div class="value-list">
+            <div class="value-row"><span class="number">×</span><div><b>流程、性能、代码分析相互割裂</b><p class="note">缺陷需要多轮转述和重复复现。</p></div></div>
+            <div class="value-row"><span class="number">×</span><div><b>只看平均响应或单条 SQL</b><p class="note">容易误判真正的累计调用成本。</p></div></div>
+            <div class="value-row"><span class="number">×</span><div><b>证据散落</b><p class="note">验收、复测、审计成本高。</p></div></div>
+          </div>
+        </article>
+        <article class="card">
+          <h3>本次闭环</h3>
+          <div class="value-list">
+            <div class="value-row"><span class="number">✓</span><div><b>业务对象贯穿 UAT、Load 与 Trace</b><p class="note">从订单状态直接追到 X++ 和 SQL。</p></div></div>
+            <div class="value-row"><span class="number">✓</span><div><b>功能缺陷与性能风险分开治理</b><p class="note">Firm 缺陷不被错误纳入负载结论。</p></div></div>
+            <div class="value-row"><span class="number">✓</span><div><b>可执行的整改顺序</b><p class="note">缓存、批量写入、移除逐行 QMS 查询、复测阈值。</p></div></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="uat" class="panel">
+      <div class="section-head"><div><h2>UAT details</h2><p>GCP2 制造企业 ERP 端到端验证</p></div><span class="status partial">Overall: Partial Pass</span></div>
+      <div class="grid kpis">
+        <article class="card kpi"><div class="value">17</div><div class="label">Pass</div><div class="note">核心采购、生产、库存、销售动作</div></article>
+        <article class="card kpi"><div class="value">6</div><div class="label">Partial Pass</div><div class="note">已验证主链，仍有例外或未覆盖边界</div></article>
+        <article class="card kpi"><div class="value">41</div><div class="label">Blocked</div><div class="note">前置、配置、数据或代码缺陷</div></article>
+        <article class="card kpi"><div class="value">1</div><div class="label">Not Run</div><div class="note">按用户指示停止客户收款与结算</div></article>
+      </div>
+      <div class="grid cols-2">
+        <article class="card">
+          <div class="visual-summary">
+            <div class="donut"><strong>23</strong><span>Pass + Partial</span></div>
+            <div>
+              <h3>UAT outcome mix</h3>
+              <p class="note">17 Pass · 6 Partial Pass · 41 Blocked · 1 Not Run</p>
+              <p style="margin-top:10px">阻塞项被保留为真实门禁，避免用绕过或人工改数制造“成功”结果。</p>
+            </div>
+          </div>
+          <h3 style="margin-top:20px">Coverage by workstream</h3>
+          <div class="bar-row"><span>P2P</span><div class="track"><div class="fill success" style="width:23%"></div></div><b>3 / 13</b></div>
+          <div class="bar-row"><span>OTC</span><div class="track"><div class="fill success" style="width:42%"></div></div><b>5 / 12</b></div>
+          <div class="bar-row"><span>Manufacturing</span><div class="track"><div class="fill success" style="width:50%"></div></div><b>7 / 14</b></div>
+          <div class="bar-row"><span>Inventory</span><div class="track"><div class="fill success" style="width:42%"></div></div><b>5 / 12</b></div>
+          <div class="bar-row"><span>RTR</span><div class="track"><div class="fill warning" style="width:21%"></div></div><b>3 / 14</b></div>
+          <p class="note">数字为 Pass + Partial Pass；Blocked 保留为真实门禁，不做“成功形状”的绕过。</p>
+        </article>
+        <article class="card">
+          <h3>End-to-end objects proven</h3>
+          <div class="timeline">
+            <div class="event"><time>Procurement</time><b>PO000005955</b><p>Confirmed / Received；采购质检 Pass / Approved。</p></div>
+            <div class="event"><time>Manufacturing</time><b>KWO002846</b><p>Estimated → Released → Started → Reported as finished；累计报工 10。</p></div>
+            <div class="event"><time>Inventory & QA</time><b>KWO002846-01</b><p>批次追溯、质量审批、库位转移与数量守恒验证完成。</p></div>
+            <div class="event"><time>Order to cash</time><b>S0000189</b><p>Reviewed → Reserved → Picked → Delivered → Invoiced，金额 501.30 CNY。</p></div>
+          </div>
+        </article>
+      </div>
+      <div class="section-head"><div><h2>Defects that matter</h2></div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Area</th><th>Finding</th><th>Classification</th><th>Next action</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">UAT-MFG-002</td><td>Planning</td><td>Planned order Firm throws “Object reference not set…”</td><td><span class="status blocked">Code defect</span></td><td>Fix Firm logic and retest GCP2-012841.</td></tr>
+            <tr><td class="mono">UAT-MFG-004</td><td>Production accounting</td><td>End posting misses A10 business-unit dimension.</td><td><span class="status blocked">Config / data</span></td><td>Correct dimension inheritance, then End KWO002846.</td></tr>
+            <tr><td class="mono">UAT-P2P-004</td><td>AP invoice</td><td>Rounding distribution has no valid ledger account.</td><td><span class="status blocked">Configuration</span></td><td>Configure account and repost INV5955-20261015.</td></tr>
+            <tr><td class="mono">UAT-P2P-003</td><td>Purchase requisition</td><td>Item M350000084 lacks procurement category.</td><td><span class="status partial">Master data</span></td><td>Maintain category and retest submission.</td></tr>
+            <tr><td class="mono">UAT-OTC-001</td><td>Sales</td><td>Original order blocked by stocking method; rebuilt flow completed.</td><td><span class="status pass">Closed</span></td><td>Retain S0000189 evidence as regression baseline.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="performance" class="panel">
+      <div class="section-head"><div class="tool-heading"><img class="tool-logo" src="Apache-JMeter-logo-transparent.png" alt="Apache JMeter"><div><h2>JMeter details</h2><p>真实 D365 会话中的 Create → Estimate → Operations schedule</p></div></div><span class="status pass">Passed · 0.00% errors</span></div>
+      <div class="grid kpis">
+        <article class="card kpi"><div class="value">10</div><div class="label">Concurrent sessions</div><div class="note">10 independent authenticated browser sessions</div></article>
+        <article class="card kpi"><div class="value">19.37s</div><div class="label">Average E2E</div><div class="note">Measured transaction chain</div></article>
+        <article class="card kpi"><div class="value">25.41s</div><div class="label">P90</div><div class="note">P95 / max: 26.573s</div></article>
+        <article class="card kpi"><div class="value">10 / 10</div><div class="label">Business validation</div><div class="note">All resulting production orders Scheduled</div></article>
+      </div>
+      <div class="grid cols-2">
+        <article class="card">
+          <h3>End-to-end distribution</h3>
+          <div class="bar-row"><span>Minimum</span><div class="track"><div class="fill success" style="width:46%"></div></div><b>12.16s</b></div>
+          <div class="bar-row"><span>P50</span><div class="track"><div class="fill" style="width:72%"></div></div><b>19.02s</b></div>
+          <div class="bar-row"><span>Average</span><div class="track"><div class="fill" style="width:73%"></div></div><b>19.37s</b></div>
+          <div class="bar-row"><span>P90</span><div class="track"><div class="fill warning" style="width:96%"></div></div><b>25.41s</b></div>
+          <div class="bar-row"><span>Maximum</span><div class="track"><div class="fill danger" style="width:100%"></div></div><b>26.57s</b></div>
+        </article>
+        <article class="card">
+          <h3>Slowest average business steps</h3>
+          <div class="bar-row"><span>Open prod. actions</span><div class="track"><div class="fill danger" style="width:100%"></div></div><b>3.74s</b></div>
+          <div class="bar-row"><span>Open estimate</span><div class="track"><div class="fill warning" style="width:65%"></div></div><b>2.43s</b></div>
+          <div class="bar-row"><span>Open scheduling</span><div class="track"><div class="fill warning" style="width:64%"></div></div><b>2.38s</b></div>
+          <div class="bar-row"><span>Create order</span><div class="track"><div class="fill" style="width:58%"></div></div><b>2.18s</b></div>
+          <div class="bar-row"><span>Set quantity</span><div class="track"><div class="fill" style="width:55%"></div></div><b>2.05s</b></div>
+        </article>
+      </div>
+      <div class="grid cols-2 section" style="margin-top:16px">
+        <article class="card"><h3>Test design</h3><p>JMeter 5.6.3 · Temurin 17 · 10 threads · 10-second ramp-up · item <span class="mono">FB00030110</span> · quantity 10 per order. Authentication and initial page rendering intentionally excluded.</p></article>
+        <article class="card"><h3>Quality guardrail</h3><p>The original Firm scenario was <b>excluded</b> after two single-user prechecks reproduced the object-reference defect. A valid Create/Estimate/Schedule replacement scenario was used instead, preventing a functional defect from contaminating the performance result.</p></article>
+      </div>
+    </section>
+
+    <section id="trace" class="panel">
+      <div class="section-head"><div class="tool-heading"><svg class="tool-logo" viewBox="0 0 78 42" aria-hidden="true"><path d="M3 25h9l7-18 10 31 10-24 8 11h28" fill="none" stroke="var(--cp-accent)" stroke-width="3" stroke-linejoin="round"/><path d="M3 40h72" stroke="var(--cp-border)" stroke-width="1"/></svg><div><h2>Trace Parser details</h2><p>从 189 MB ETL 到 X++ / SQL 根因</p></div></div><span class="status info">Decoded & correlated</span></div>
+      <div class="grid kpis">
+        <article class="card kpi"><div class="value">3,840,845</div><div class="label">Decoded events</div><div class="note">0 malformed rows</div></article>
+        <article class="card kpi"><div class="value">1,807,556</div><div class="label">Paired X++ calls</div><div class="note">Enter / exit correlation</div></article>
+        <article class="card kpi"><div class="value">14,632</div><div class="label">SQL execution events</div><div class="note">Statements correlated to X++ callers</div></article>
+        <article class="card kpi"><div class="value">52.2s</div><div class="label">Cost estimation chain</div><div class="note">30.5s DB time · 9,025 DB calls</div></article>
+      </div>
+      <div class="grid cols-2">
+        <article class="card">
+          <h3>Inclusive call chain</h3>
+          <div class="bar-row"><span>ProdUpdCostEstimation.run</span><div class="track"><div class="fill danger" style="width:100%"></div></div><b>52.2s</b></div>
+          <div class="bar-row"><span>costEstimateItems</span><div class="track"><div class="fill warning" style="width:72%"></div></div><b>37.8s</b></div>
+          <div class="bar-row"><span>IWS expandBOMRoute</span><div class="track"><div class="fill warning" style="width:63%"></div></div><b>32.9s</b></div>
+          <div class="bar-row"><span>createProdBOM</span><div class="track"><div class="fill" style="width:58%"></div></div><b>30.1s</b></div>
+          <div class="bar-row"><span>searchDownBOM</span><div class="track"><div class="fill" style="width:40%"></div></div><b>20.8s</b></div>
+          <p class="note">Inclusive durations are nested and must not be added together.</p>
+        </article>
+        <article class="card">
+          <h3>What the evidence says</h3>
+          <div class="value-list">
+            <div class="value-row"><span class="number">1</span><div><b>Not one slow query</b><p class="note">Slowest individual SQL ≈ 0.706s, insufficient to explain 52.2s.</p></div></div>
+            <div class="value-row"><span class="number">2</span><div><b>Database-call amplification</b><p class="note">BOM recursion and row-by-row processing generate thousands of small calls.</p></div></div>
+            <div class="value-row"><span class="number">3</span><div><b>Customization amplifies the path</b><p class="note">IWS extension exclusive CPU is small; most cost is downstream standard BOM and database work.</p></div></div>
+            <div class="value-row"><span class="number">4</span><div><b>Actionable optimization</b><p class="note">Cache BOM/BOMVersion lookups, batch writes, remove per-row QMS lookups, reuse expanded BOM results.</p></div></div>
+          </div>
+        </article>
+      </div>
+      <div class="section-head"><div><h2>High-frequency SQL callers</h2></div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>X++ caller</th><th>Calls</th><th>Total SQL time</th><th>Max call</th><th>Interpretation</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">InventTrans::insert</td><td>136</td><td>3.79s</td><td>144ms</td><td>Row-by-row inventory transaction creation.</td></tr>
+            <tr><td class="mono">QMS…qmsJournalStatusDisplay</td><td>810</td><td>1.98s</td><td>66ms</td><td>Display/status lookup repeated per line.</td></tr>
+            <tr><td class="mono">InventTransOriginProdBOM::find…</td><td>832</td><td>1.60s</td><td>60ms</td><td>Repeated origin lookup; caching candidate.</td></tr>
+            <tr><td class="mono">ProdBOM::insert</td><td>139</td><td>1.46s</td><td>229ms</td><td>Batch persistence opportunity.</td></tr>
+            <tr><td class="mono">BomHierarchy::searchDownVersion</td><td>1,011</td><td>2.30s</td><td>101ms</td><td>BOMVersion recursion and repeated access.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="artifacts" class="panel">
+      <div class="section-head"><div><h2>Deliverables & evidence</h2><p>可复核、可审计、可用于复测</p></div></div>
+      <div class="filter-row">
+        <button class="filter active" data-filter="all">All</button>
+        <button class="filter" data-filter="uat">UAT</button>
+        <button class="filter" data-filter="perf">Performance</button>
+        <button class="filter" data-filter="trace">Trace</button>
+      </div>
+      <div class="grid cols-3" id="artifact-grid">
+        <article class="card artifact" data-kind="uat"><div class="eyebrow">UAT</div><h3>Excel execution record</h3><p>65 use cases, actual results, statuses, defects and evidence links.</p></article>
+        <article class="card artifact" data-kind="uat"><div class="eyebrow">UAT</div><h3>32-page Word / PDF report</h3><p>Executive summary, controls, workflows, defect register and evidence index.</p></article>
+        <article class="card artifact" data-kind="uat"><div class="eyebrow">UAT</div><h3>59 UI screenshots</h3><p>Master data, PO, production, QA, inventory, sales and accounting evidence.</p></article>
+        <article class="card artifact" data-kind="perf"><div class="eyebrow">JMeter</div><h3>JMX + JTL + HTML dashboards</h3><p>Smoke/load runs, transaction samples, percentiles and reproducible launch scripts.</p></article>
+        <article class="card artifact" data-kind="perf"><div class="eyebrow">JMeter</div><h3>Evidence report</h3><p>Configuration, sanitized request evidence, screenshots, business validation and caveats.</p></article>
+        <article class="card artifact" data-kind="perf"><div class="eyebrow">JMeter</div><h3>Step timing breakdown</h3><p>Per-order and per-step CSV for the ten concurrent production orders.</p></article>
+        <article class="card artifact" data-kind="trace"><div class="eyebrow">Trace</div><h3>189 MB ETL + 5.12 GB decoded CSV</h3><p>Method names, source paths, activity IDs, SQL payloads and timestamps.</p></article>
+        <article class="card artifact" data-kind="trace"><div class="eyebrow">Trace</div><h3>Analysis JSON & scripts</h3><p>Repeatable aggregation for call duration, self time, activities and SQL correlation.</p></article>
+        <article class="card artifact" data-kind="trace"><div class="eyebrow">Trace</div><h3>CSS-ready PowerPoint</h3><p>Overview, redacted proof, X++/SQL details, root cause and improvement roadmap.</p></article>
+      </div>
+      <div class="callout" style="margin-top:16px"><b>Evidence principle:</b> a blocked prerequisite remains Blocked; a functional defect is excluded from load-test conclusions; a failed posting is verified for rollback. This preserves decision integrity.</div>
+    </section>
+
+    <footer>Generated from local UAT, JMeter and Trace Parser evidence · Microsoft Scout · 20 Oct 2026</footer>
+  </main>
+  <script>
+    const EN = {
+      "从业务流程验证，到并发压测，再到代码级根因": "From business-process validation to concurrent load testing and code-level root cause",
+      "近期工作形成了一条完整的质量工程闭环：用可见 UI 执行端到端 UAT，以 JMeter 复现真实业务并发，再通过 Trace Parser 将性能现象下钻到 X++ 调用链与 SQL 访问模式。": "Recent work established a complete quality-engineering loop: execute end-to-end UAT through the visible UI, reproduce real business concurrency with JMeter, and use Trace Parser to drill performance symptoms down to X++ call chains and SQL access patterns.",
+      "一条由业务结果驱动、可审计、可重复的验证链路": "An auditable, repeatable validation chain driven by business outcomes",
+      "在 D365 可见 UI 中执行真实采购、生产、库存、销售与财务流程。": "Execute real procurement, production, inventory, sales, and finance processes in the visible D365 UI.",
+      "捕获对象编号、状态、批次、凭证、错误消息与截图证据。": "Capture object IDs, statuses, batches, vouchers, error messages, and screenshot evidence.",
+      "把业务动作转成 JMeter 并发场景，验证 10 个独立会话。": "Convert business actions into a JMeter concurrency scenario with 10 independent sessions.",
+      "导入 ETL，解码 X++ 方法、调用时间、SQL 与活动关联。": "Import ETL and decode X++ methods, timing, SQL, and activity correlation.",
+      "把现象转成缺陷分类、优化优先级与可复测目标。": "Turn observations into defect classifications, optimization priorities, and retestable targets.",
+      "从“测试是否通过”升级到“为什么慢、哪里错、如何验证修复”。": "Move beyond “did the test pass?” to “why is it slow, what is wrong, and how do we verify the fix?”",
+      "UAT 给出业务真实性；JMeter 给出并发基线；Trace Parser 给出工程根因。": "UAT provides business validity; JMeter provides the concurrency baseline; Trace Parser provides the engineering root cause.",
+      "核心实物流和销售开票跑通；生产 End、采购发票、计划单 Firm 暴露真实缺陷。": "Core physical flow and sales invoicing completed; Production End, vendor invoicing, and planned-order Firm exposed real defects.",
+      "平均 19.37 秒，P90 25.41 秒，所有 10 张生产订单最终 Scheduled。": "Average 19.37 seconds, P90 25.41 seconds, and all 10 production orders ended in Scheduled status.",
+      "Trace：调用放大而非单条慢 SQL": "Trace: call amplification, not one slow SQL statement",
+      "成本估算约 52.2 秒，9,025 次数据库调用；核心是 BOM 递归与逐行访问。": "Cost estimation took about 52.2 seconds with 9,025 database calls; the core issue is BOM recursion and row-by-row access.",
+      "把一次性的手工验证，转化成可复用的交付能力": "Turn one-off manual validation into a reusable delivery capability",
+      "更早发现业务与配置缺口": "Find business and configuration gaps earlier",
+      "在投产前识别计划单 Firm 空对象、生产过账维度、采购发票舍入科目、工作流和物料主数据问题，避免故障进入生产。": "Identify the planned-order Firm null-reference issue, production posting dimensions, vendor-invoice rounding account, workflows, and item master-data gaps before go-live.",
+      "事实驱动的 Go / No-Go": "Fact-based Go / No-Go",
+      "每个结论都有对象编号、状态、错误原文与证据支撑，避免把“未测”“被阻塞”误报成通过或失败。": "Every conclusion is supported by object IDs, statuses, original error text, and evidence—preventing “not tested” or “blocked” from being misreported as pass or fail.",
+      "把优化资源投向真正瓶颈": "Focus optimization effort on the real bottleneck",
+      "Trace 证明主要问题是 9,025 次数据库调用和 BOM 递归，而不是某一条 SQL；减少无效索引调优与猜测。": "Trace proves the main issue is 9,025 database calls and BOM recursion—not one SQL statement—reducing ineffective index tuning and guesswork.",
+      "建立可复测的性能基线": "Establish a repeatable performance baseline",
+      "10 用户、10 秒 ramp-up、唯一生产订单、状态关联与最终业务校验，使修复前后能够使用同一场景比较。": "Ten users, a 10-second ramp-up, unique production orders, state correlation, and final business validation enable like-for-like comparison before and after fixes.",
+      "完整证据链与交付物": "Complete evidence chain and deliverables",
+      "UI 截图、Excel 执行记录、Word/PDF 报告、JMeter JTL/HTML、ETL、PPT 和分析 JSON 可追溯到每个结论。": "UI screenshots, Excel execution records, Word/PDF reports, JMeter JTL/HTML, ETL, PPT, and analysis JSON trace back to every conclusion.",
+      "跨职能协同更快": "Faster cross-functional collaboration",
+      "业务、测试、开发与 CSS 团队使用同一套事实：业务步骤、响应时间、X++ 方法、SQL 调用和整改优先级。": "Business, test, development, and CSS teams use the same facts: process steps, response times, X++ methods, SQL calls, and remediation priorities.",
+      "传统方式": "Traditional approach",
+      "流程、性能、代码分析相互割裂": "Process, performance, and code analysis are disconnected",
+      "缺陷需要多轮转述和重复复现。": "Defects require repeated handoffs and reproduction.",
+      "只看平均响应或单条 SQL": "Only average response or a single SQL is examined",
+      "容易误判真正的累计调用成本。": "The true cumulative call cost is easily misdiagnosed.",
+      "证据散落": "Evidence is fragmented",
+      "验收、复测、审计成本高。": "Acceptance, retesting, and audit costs remain high.",
+      "本次闭环": "This closed loop",
+      "业务对象贯穿 UAT、Load 与 Trace": "Business objects connect UAT, load, and trace",
+      "从订单状态直接追到 X++ 和 SQL。": "Trace directly from order status to X++ and SQL.",
+      "功能缺陷与性能风险分开治理": "Functional defects and performance risks are governed separately",
+      "Firm 缺陷不被错误纳入负载结论。": "The Firm defect is not incorrectly included in load-test conclusions.",
+      "可执行的整改顺序": "Actionable remediation sequence",
+      "缓存、批量写入、移除逐行 QMS 查询、复测阈值。": "Caching, batch writes, removal of per-row QMS queries, and retest thresholds.",
+      "GCP2 制造企业 ERP 端到端验证": "GCP2 manufacturing ERP end-to-end validation",
+      "核心采购、生产、库存、销售动作": "Core procurement, production, inventory, and sales actions",
+      "已验证主链，仍有例外或未覆盖边界": "Main flow validated; exceptions or boundary coverage remain",
+      "前置、配置、数据或代码缺陷": "Prerequisite, configuration, data, or code defects",
+      "按用户指示停止客户收款与结算": "Customer payment and settlement stopped as directed",
+      "阻塞项被保留为真实门禁，避免用绕过或人工改数制造“成功”结果。": "Blocked items remain real gates; no bypass or manual data changes were used to manufacture a successful result.",
+      "数字为 Pass + Partial Pass；Blocked 保留为真实门禁，不做“成功形状”的绕过。": "Figures show Pass + Partial Pass; Blocked remains a real gate with no success-shaped workaround.",
+      "Confirmed / Received；采购质检 Pass / Approved。": "Confirmed / Received; purchase quality order Pass / Approved.",
+      "Estimated → Released → Started → Reported as finished；累计报工 10。": "Estimated → Released → Started → Reported as finished; cumulative reported quantity: 10.",
+      "批次追溯、质量审批、库位转移与数量守恒验证完成。": "Batch traceability, quality approval, location transfer, and quantity conservation were validated.",
+      "Reviewed → Reserved → Picked → Delivered → Invoiced，金额 501.30 CNY。": "Reviewed → Reserved → Picked → Delivered → Invoiced; amount: CNY 501.30.",
+      "真实 D365 会话中的 Create → Estimate → Operations schedule": "Create → Estimate → Operations schedule in real D365 sessions",
+      "从 189 MB ETL 到 X++ / SQL 根因": "From a 189 MB ETL to X++ / SQL root cause",
+      "可复核、可审计、可用于复测": "Reviewable, auditable, and ready for retesting"
+    };
+    const originalText = new WeakMap();
+    const langButtons = [...document.querySelectorAll(".lang-btn")];
+    function applyLanguage(lang) {
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      let node;
+      while ((node = walker.nextNode())) {
+        if (node.parentElement?.closest("script, style")) continue;
+        if (!originalText.has(node)) originalText.set(node, node.nodeValue);
+        const source = originalText.get(node);
+        const key = source.trim();
+        if (lang === "en" && EN[key]) node.nodeValue = source.replace(key, EN[key]);
+        else node.nodeValue = source;
+      }
+      document.documentElement.lang = lang === "en" ? "en" : "zh-CN";
+      document.title = lang === "en"
+        ? "D365 F&O Quality Engineering Dashboard"
+        : "D365 F&O 质量工程 Dashboard";
+      langButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.lang === lang));
+      const url = new URL(location.href);
+      if (lang === "en") url.searchParams.set("lang", "en");
+      else url.searchParams.delete("lang");
+      history.replaceState(null, "", url);
+    }
+    langButtons.forEach(btn => btn.addEventListener("click", () => applyLanguage(btn.dataset.lang)));
+    const tabs = [...document.querySelectorAll(".tab")];
+    const panels = [...document.querySelectorAll(".panel")];
+    tabs.forEach(tab => tab.addEventListener("click", () => {
+      tabs.forEach(item => item.classList.toggle("active", item === tab));
+      panels.forEach(panel => panel.classList.toggle("active", panel.id === tab.dataset.tab));
+      const url = new URL(location.href);
+      url.hash = tab.dataset.tab;
+      history.replaceState(null, "", url);
+      window.scrollTo({ top: document.querySelector(".tabs").offsetTop, behavior: "smooth" });
+    }));
+    const initial = location.hash.slice(1);
+    if (initial && document.getElementById(initial)) {
+      document.querySelector(`[data-tab="${initial}"]`)?.click();
+    }
+    applyLanguage(new URLSearchParams(location.search).get("lang") === "en" ? "en" : "zh");
+    const filters = [...document.querySelectorAll(".filter")];
+    const artifacts = [...document.querySelectorAll(".artifact")];
+    filters.forEach(filter => filter.addEventListener("click", () => {
+      filters.forEach(item => item.classList.toggle("active", item === filter));
+      artifacts.forEach(item => {
+        item.style.display = filter.dataset.filter === "all" || item.dataset.kind === filter.dataset.filter ? "" : "none";
+      });
+    }));
+  </script>
+</body>
+</html>
